@@ -9,7 +9,7 @@ import json
 
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
-
+CHANGE_LOOPS = 20
 
 
 def load_image(nombre, dir_imagen, alpha=False):
@@ -162,7 +162,7 @@ class NoteName(pygame.sprite.Sprite):
     def update(self):
         self.drawme()
 
-        pygame.draw.rect(self.image, (0,0,0), (0,0, self.rect.width, self.rect.height), 4)
+#        pygame.draw.rect(self.image, (0,0,0), (0,0, self.rect.width, self.rect.height), 4)
         displayText = ""
         for note in self.notes:
             posy = 160
@@ -187,6 +187,16 @@ class NoteName(pygame.sprite.Sprite):
 
 
 def main():
+    keyArray = {}
+    keyArray["c"] = pygame.K_a
+    keyArray["d"] = pygame.K_s
+    keyArray["e"] = pygame.K_d
+    keyArray["f"] = pygame.K_f
+    keyArray["g"] = pygame.K_g
+    keyArray["a"] = pygame.K_h
+    keyArray["b"] = pygame.K_j
+
+
     pygame.init()
 
 
@@ -210,20 +220,38 @@ def main():
     background = background.convert()
     background.fill((250, 250, 250))
 
+    background_green = pygame.Surface(screen.get_size())
+    background_green = background_green.convert()
+    background_green.fill((255, 250, 255))
+    pygame.draw.rect(background_green, (0,255,0), (0,0, SCREEN_WIDTH, SCREEN_HEIGHT), 20)
+
+    background_red = pygame.Surface(screen.get_size())
+    background_red = background_red.convert()
+    background_red.fill((255, 250, 255))
+    pygame.draw.rect(background_red, (255,0,0), (0,0, SCREEN_WIDTH, SCREEN_HEIGHT), 20)
+
+
     staff = Staff()
     keyboard = Keyboard()
     notename = NoteName()
 
+    staff_position = (20 + notename.rect.width/2 - staff.rect.width/2,20)
+    keyboard_position = (20 + 20 + notename.rect.width, 20 + staff.rect.height/2 - keyboard.rect.height/2)
+    notename_position = (20,staff.rect.height + 40)
+
     screen.blit(background, (0,0))
-    screen.blit(staff.image, (0,0))
-    screen.blit(keyboard.image, (80*4,0))
-    screen.blit(notename.image, (0,300))
+    screen.blit(background_green, (0,0))
+    screen.blit(staff.image, staff_position)
+    screen.blit(keyboard.image, keyboard_position)
+    screen.blit(notename.image, notename_position)
 
     pygame.display.flip()
 
     current_notes = []
     i = 0
     changed = 0
+    failure = 0
+
 
     while True:
         if changed != 0:
@@ -232,25 +260,27 @@ def main():
         else:
             if i < len(data["steps"]) and i>=0:
                 current_notes = data["steps"][i]["notes"]
+            else:
+                current_notes = []
 
         staff.notes = current_notes
         keyboard.notes = current_notes
         notename.notes = current_notes
 
-        background = pygame.Surface(screen.get_size())
-        background = background.convert()
-        background.fill((250, 250, 250))
-
         staff.update()
         keyboard.update()
         notename.update()
-
         screen.blit(background, (0,0))
-        screen.blit(staff.image, (20 + notename.rect.width/2 - staff.rect.width/2,20))
-        screen.blit(keyboard.image, (20 + 20 + notename.rect.width, 20 + staff.rect.height/2 - keyboard.rect.height/2))
-        screen.blit(notename.image, (20,staff.rect.height + 40))
+        if failure == 1:
+            background_red.set_alpha(255*changed/CHANGE_LOOPS)
+            screen.blit(background_red, (0,0))
+        else:    
+            background_green.set_alpha(255*changed/CHANGE_LOOPS)
+            screen.blit(background_green, (0,0))
 
-#        screen.blit(tux, (tux_pos_x, tux_pos_y))
+        screen.blit(staff.image, staff_position)
+        screen.blit(keyboard.image, keyboard_position)
+        screen.blit(notename.image, (20,staff.rect.height + 40))
 
         pygame.display.flip()
 
@@ -258,14 +288,28 @@ def main():
             if event.type == pygame.QUIT:
                 sys.exit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    if i - 1 >= 0:
-                        i = i - 1
-                        changed = 10
-                elif event.key == pygame.K_RIGHT:
-                    if i + 1 < len(data["steps"]):
+                keyFound = 0
+                for theNote in current_notes:
+                    if event.key == keyArray[theNote]:
                         i = i + 1
-                        changed = 10
+                        changed = CHANGE_LOOPS
+                        failure = 0                        
+                        keyFound = 1
+                if keyFound == 0:
+                    if event.key == pygame.K_LEFT:
+                        if i - 1 >= 0:
+                            i = i - 1
+                            changed = CHANGE_LOOPS
+                            failure = 1
+
+                    elif event.key == pygame.K_RIGHT:
+                        if i + 1 < len(data["steps"]):
+                            i = i + 1
+                        changed = CHANGE_LOOPS
+                        failure = 0
+                    else:
+                        changed = CHANGE_LOOPS
+                        failure = 1
 
 
 
