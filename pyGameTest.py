@@ -12,7 +12,7 @@ SCREEN_HEIGHT = 768
 CHANGE_LOOPS = 20
 
 
-def load_image(nombre, dir_imagen, alpha=False):
+def load_image(nombre, dir_imagen, alpha=False, scale=1):
     # Encontramos la ruta completa de la imagen
     ruta = os.path.join(dir_imagen, nombre)
     try:
@@ -25,6 +25,10 @@ def load_image(nombre, dir_imagen, alpha=False):
         image = image.convert_alpha()
     else:
         image = image.convert()
+
+    if scale != 1:
+        imgsize = image.get_size()
+        image = pygame.transform.scale(image, (int(imgsize[0]*scale), int(imgsize[1]*scale)))
     return image
 
 
@@ -99,11 +103,11 @@ class Keyboard(pygame.sprite.Sprite):
             pygame.draw.rect(self.image, (0,0,0), (i*(self.rect.width/7),0,(self.rect.width/7), self.rect.height),2)
 
         # black keys
-        pygame.draw.rect(self.image, (0,0,0), (1*(self.rect.width/14),0,(self.rect.width/8), 3*self.rect.height/5),0)
-        pygame.draw.rect(self.image, (0,0,0), (3*(self.rect.width/14),0,(self.rect.width/8), 3*self.rect.height/5),0)
-        pygame.draw.rect(self.image, (0,0,0), (7*(self.rect.width/14),0,(self.rect.width/8), 3*self.rect.height/5),0)
-        pygame.draw.rect(self.image, (0,0,0), (9*(self.rect.width/14),0,(self.rect.width/8), 3*self.rect.height/5),0)
-        pygame.draw.rect(self.image, (0,0,0), (11*(self.rect.width/14),0,(self.rect.width/8), 3*self.rect.height/5),0)
+        pygame.draw.rect(self.image, (0,0,0), ((1*self.rect.width)/14,0,(self.rect.width/8), 3*self.rect.height/5),0)
+        pygame.draw.rect(self.image, (0,0,0), ((3*self.rect.width)/14,0,(self.rect.width/8), 3*self.rect.height/5),0)
+        pygame.draw.rect(self.image, (0,0,0), ((7*self.rect.width)/14,0,(self.rect.width/8), 3*self.rect.height/5),0)
+        pygame.draw.rect(self.image, (0,0,0), ((9*self.rect.width)/14,0,(self.rect.width/8), 3*self.rect.height/5),0)
+        pygame.draw.rect(self.image, (0,0,0), ((11*self.rect.width)/14,0,(self.rect.width/8), 3*self.rect.height/5),0)
 
 
     def __init__(self):
@@ -145,8 +149,8 @@ class NoteName(pygame.sprite.Sprite):
     notes = [] # 'c', 'd', 'e', 'f', 'g', 'a', 'b']
 
     def drawme(self):
-        self.image = pygame.Surface([300, 180])
-        self.image.fill((250,250,250))
+        self.image = pygame.Surface([300, 180], flags=pygame.SRCALPHA)
+        self.image.fill((250,250,250, 0))
         self.rect = self.image.get_rect()
 
     def __init__(self):
@@ -185,6 +189,53 @@ class NoteName(pygame.sprite.Sprite):
         self.image.blit(fontRender, ((self.rect.width/2)-fontRender.get_rect().width/2, (self.rect.height/2)-fontRender.get_rect().height/2))
 
 
+class Mascot(pygame.sprite.Sprite):
+    idleImage = []
+    runImage = []
+    def drawme(self):
+        self.image.fill((255,255,255,0))
+        if self.state == 0:
+            self.image.blit(self.idleImage[int(self.step)], (0,0))
+        else:
+            self.image.blit(self.runImage[int(self.step)], (0,0))
+
+    def run(self):
+        self.state = 1
+        self.step = 0
+
+    def idle(self):
+        self.state = 0
+        self.step = 0
+
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.idleImage.append(load_image("frame-1.png", "./idle", alpha=True, scale=0.25))
+        self.idleImage.append(load_image("frame-2.png", "./idle", alpha=True, scale=0.25))
+        self.idleImage.append(load_image("frame-1.png", "./idle", alpha=True, scale=0.25))
+        self.idleImage.append(load_image("frame-2.png", "./idle", alpha=True, scale=0.25))
+        self.runImage.append(load_image("run/frame-1.png", "./", alpha=True, scale=0.25))
+        self.runImage.append(load_image("run/frame-2.png", "./", alpha=True, scale=0.25))
+        self.runImage.append(load_image("run/frame-3.png", "./", alpha=True, scale=0.25))
+        self.runImage.append(load_image("run/frame-4.png", "./", alpha=True, scale=0.25))
+        self.state = 0 # idle
+        # self.state = 1 # run
+        self.step = 0
+        self.image = pygame.Surface(self.idleImage[0].get_size(), flags=pygame.SRCALPHA)
+        self.drawme()
+
+
+    def update(self):
+        newStep = self.step + 0.1
+        if newStep >= 4:
+            newStep = 0
+
+        if int(newStep) != int(self.step):
+            self.step = newStep
+            self.drawme()
+        else:
+            self.step = newStep
+
+
 
 def main():
     keyArray = {}
@@ -219,6 +270,10 @@ def main():
     background = pygame.Surface(screen.get_size())
     background = background.convert()
     background.fill((250, 250, 250))
+    background_image = load_image("background.png", "./", alpha=False)
+    background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
+    background.blit(background_image, (0,0))
+
 
     background_green = pygame.Surface(screen.get_size())
     background_green = background_green.convert()
@@ -234,16 +289,19 @@ def main():
     staff = Staff()
     keyboard = Keyboard()
     notename = NoteName()
+    mascot = Mascot()
 
     staff_position = (20 + notename.rect.width/2 - staff.rect.width/2,20)
     keyboard_position = (20 + 20 + notename.rect.width, 20 + staff.rect.height/2 - keyboard.rect.height/2)
     notename_position = (20,staff.rect.height + 40)
+    mascot_position = (20, 580)
 
     screen.blit(background, (0,0))
     screen.blit(background_green, (0,0))
     screen.blit(staff.image, staff_position)
     screen.blit(keyboard.image, keyboard_position)
     screen.blit(notename.image, notename_position)
+    screen.blit(mascot.image, mascot_position)
 
     pygame.display.flip()
 
@@ -270,6 +328,7 @@ def main():
         staff.update()
         keyboard.update()
         notename.update()
+        mascot.update()
         screen.blit(background, (0,0))
         if failure == 1:
             background_red.set_alpha(255*changed/CHANGE_LOOPS)
@@ -281,6 +340,7 @@ def main():
         screen.blit(staff.image, staff_position)
         screen.blit(keyboard.image, keyboard_position)
         screen.blit(notename.image, (20,staff.rect.height + 40))
+        screen.blit(mascot.image, mascot_position)
 
         pygame.display.flip()
 
