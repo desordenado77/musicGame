@@ -36,6 +36,7 @@ class Staff(pygame.sprite.Sprite):
 
     notes = [] # 'c', 'd', 'e', 'f', 'g', 'a', 'b']
     size = []
+    position = (0,0)
 
     def drawme(self):
         self.image.fill((250,250,250))
@@ -94,6 +95,7 @@ class Staff(pygame.sprite.Sprite):
 class Keyboard(pygame.sprite.Sprite):
 
     notes = [] # 'c', 'd', 'e', 'f', 'g', 'a', 'b']
+    position = (0,0)
 
     def drawme(self):
         self.image.fill((250,250,250))
@@ -147,6 +149,7 @@ class Keyboard(pygame.sprite.Sprite):
 class NoteName(pygame.sprite.Sprite):
 
     notes = [] # 'c', 'd', 'e', 'f', 'g', 'a', 'b']
+    position = (0,0)
 
     def drawme(self):
         self.image = pygame.Surface([300, 180], flags=pygame.SRCALPHA)
@@ -192,20 +195,35 @@ class NoteName(pygame.sprite.Sprite):
 class Mascot(pygame.sprite.Sprite):
     idleImage = []
     runImage = []
+    dizzyImage = []
+    position = (0,0)
+    targetPosition = (0,0)
+    dizzyTime = 0
     def drawme(self):
         self.image.fill((255,255,255,0))
         if self.state == 0:
             self.image.blit(self.idleImage[int(self.step)], (0,0))
-        else:
+        elif self.state == 1:
             self.image.blit(self.runImage[int(self.step)], (0,0))
+        elif self.state == 2:
+            self.image.blit(self.dizzyImage[int(self.step)], (0,0))            
 
     def run(self):
         self.state = 1
-        self.step = 0
+#        self.step = 0
 
     def idle(self):
         self.state = 0
-        self.step = 0
+#        self.step = 0
+
+    def dizzy(self):
+        self.state = 2
+#        self.step = 0
+
+    def moveTo(self, x, y):
+        if ((self.position[0] != self.targetPosition[0]) or (self.position[1] != self.targetPosition[1])) and (self.state == 0):
+            self.run()
+        self.targetPosition = (x, y)
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -213,10 +231,14 @@ class Mascot(pygame.sprite.Sprite):
         self.idleImage.append(load_image("frame-2.png", "./idle", alpha=True, scale=0.25))
         self.idleImage.append(load_image("frame-1.png", "./idle", alpha=True, scale=0.25))
         self.idleImage.append(load_image("frame-2.png", "./idle", alpha=True, scale=0.25))
-        self.runImage.append(load_image("run/frame-1.png", "./", alpha=True, scale=0.25))
-        self.runImage.append(load_image("run/frame-2.png", "./", alpha=True, scale=0.25))
-        self.runImage.append(load_image("run/frame-3.png", "./", alpha=True, scale=0.25))
-        self.runImage.append(load_image("run/frame-4.png", "./", alpha=True, scale=0.25))
+        self.runImage.append(load_image("frame-1.png", "./run", alpha=True, scale=0.25))
+        self.runImage.append(load_image("frame-2.png", "./run", alpha=True, scale=0.25))
+        self.runImage.append(load_image("frame-3.png", "./run", alpha=True, scale=0.25))
+        self.runImage.append(load_image("frame-4.png", "./run", alpha=True, scale=0.25))
+        self.dizzyImage.append(load_image("frame-1.png", "./dizzy", alpha=True, scale=0.25))
+        self.dizzyImage.append(load_image("frame-2.png", "./dizzy", alpha=True, scale=0.25))
+        self.dizzyImage.append(load_image("frame-1.png", "./dizzy", alpha=True, scale=0.25))
+        self.dizzyImage.append(load_image("frame-2.png", "./dizzy", alpha=True, scale=0.25))
         self.state = 0 # idle
         # self.state = 1 # run
         self.step = 0
@@ -225,7 +247,7 @@ class Mascot(pygame.sprite.Sprite):
 
 
     def update(self):
-        newStep = self.step + 0.1
+        newStep = self.step + 0.09
         if newStep >= 4:
             newStep = 0
 
@@ -235,6 +257,25 @@ class Mascot(pygame.sprite.Sprite):
         else:
             self.step = newStep
 
+        if self.state == 2:
+            if self.dizzyTime < 40:
+                self.dizzyTime = self.dizzyTime + 1
+            else:
+                self.dizzyTime = 0
+                self.state = 0
+
+        else:
+            if self.position[0] < self.targetPosition[0]:
+                self.position = (self.position[0] + 1, self.position[1])
+
+            if self.position[1] < self.targetPosition[1]:
+                self.position = (self.position[0], self.position[1] + 1)
+
+            if self.position[1] > self.targetPosition[1]:
+                self.position = (self.position[0], self.position[1] - 1)
+
+            if (self.position[0] == self.targetPosition[0]) and (self.position[1] == self.targetPosition[1]) and (self.state != 0):
+                self.idle()
 
 
 def main():
@@ -291,17 +332,17 @@ def main():
     notename = NoteName()
     mascot = Mascot()
 
-    staff_position = (20 + notename.rect.width/2 - staff.rect.width/2,20)
-    keyboard_position = (20 + 20 + notename.rect.width, 20 + staff.rect.height/2 - keyboard.rect.height/2)
-    notename_position = (20,staff.rect.height + 40)
-    mascot_position = (20, 580)
+    staff.position = (20 + notename.rect.width/2 - staff.rect.width/2,20)
+    keyboard.position = (20 + 20 + notename.rect.width, 20 + staff.rect.height/2 - keyboard.rect.height/2)
+    notename.position = (20,staff.rect.height + 40)
+    mascot.position = (20, 580)
 
     screen.blit(background, (0,0))
     screen.blit(background_green, (0,0))
-    screen.blit(staff.image, staff_position)
-    screen.blit(keyboard.image, keyboard_position)
-    screen.blit(notename.image, notename_position)
-    screen.blit(mascot.image, mascot_position)
+    screen.blit(staff.image, staff.position)
+    screen.blit(keyboard.image, keyboard.position)
+    screen.blit(notename.image, notename.position)
+    screen.blit(mascot.image, mascot.position)
 
     pygame.display.flip()
 
@@ -310,6 +351,7 @@ def main():
     changed = 0
     failure = 0
 
+#    mascot.moveTo(900, 580)
 
     while True:
         if changed != 0:
@@ -325,6 +367,7 @@ def main():
         keyboard.notes = current_notes
         notename.notes = current_notes
 
+        mascot.moveTo(((1024-200)/len(data["steps"]))*i+20, 580)
         staff.update()
         keyboard.update()
         notename.update()
@@ -337,39 +380,43 @@ def main():
             background_green.set_alpha(255*changed/CHANGE_LOOPS)
             screen.blit(background_green, (0,0))
 
-        screen.blit(staff.image, staff_position)
-        screen.blit(keyboard.image, keyboard_position)
-        screen.blit(notename.image, (20,staff.rect.height + 40))
-        screen.blit(mascot.image, mascot_position)
+        screen.blit(staff.image, staff.position)
+        screen.blit(keyboard.image, keyboard.position)
+        screen.blit(notename.image, notename.position)
+        screen.blit(mascot.image, mascot.position)
 
         pygame.display.flip()
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                keyFound = 0
-                for theNote in current_notes:
-                    if event.key == keyArray[theNote]:
-                        i = i + 1
-                        changed = CHANGE_LOOPS
-                        failure = 0                        
-                        keyFound = 1
-                if keyFound == 0:
-                    if event.key == pygame.K_LEFT:
-                        if i - 1 >= 0:
-                            i = i - 1
+        if changed == 0:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    keyFound = 0
+
+                    for theNote in current_notes:
+                        if event.key == keyArray[theNote]:
+                            i = i + 1
+                            changed = CHANGE_LOOPS
+                            failure = 0                        
+                            keyFound = 1
+                    if keyFound == 0:
+                        if event.key == pygame.K_LEFT:
+                            if i - 1 >= 0:
+                                i = i - 1
+                                changed = CHANGE_LOOPS
+                                failure = 1                            
+
+                        elif event.key == pygame.K_RIGHT:
+                            if i + 1 < len(data["steps"]):
+                                i = i + 1
+                            changed = CHANGE_LOOPS
+                            failure = 0
+                            mascot.run()
+                        else:
                             changed = CHANGE_LOOPS
                             failure = 1
-
-                    elif event.key == pygame.K_RIGHT:
-                        if i + 1 < len(data["steps"]):
-                            i = i + 1
-                        changed = CHANGE_LOOPS
-                        failure = 0
-                    else:
-                        changed = CHANGE_LOOPS
-                        failure = 1
+                            mascot.dizzy()
 
 
 
