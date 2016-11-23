@@ -352,7 +352,8 @@ def main():
     failure = 0
 
 #    mascot.moveTo(900, 580)
-
+    clock = pygame.time.Clock()
+    #prevtime = 0
     while True:
         if changed != 0:
             current_notes = []
@@ -418,6 +419,10 @@ def main():
                             failure = 1
                             mascot.dizzy()
 
+        #curtime = pygame.time.get_ticks()
+        clock.tick(60)
+        #print "elapsed time " + str(curtime-prevtime)
+        #prevtime = curtime
 
 
 if __name__ == "__main__":
