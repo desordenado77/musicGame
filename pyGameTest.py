@@ -11,6 +11,9 @@ import random
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
 CHANGE_LOOPS = 20
+BG_FOLDER = "./backgrounds"
+MASCOT_SCALE = 0.40
+MASCOT_SPEED = 2
 
 
 def load_image(nombre, dir_imagen, alpha=False, scale=1):
@@ -200,6 +203,7 @@ class Mascot(pygame.sprite.Sprite):
     position = (0,0)
     targetPosition = (0,0)
     dizzyTime = 0
+
     def drawme(self):
         self.image.fill((255,255,255,0))
         if self.state == 0:
@@ -228,22 +232,23 @@ class Mascot(pygame.sprite.Sprite):
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.idleImage.append(load_image("frame-1.png", "./idle", alpha=True, scale=0.25))
-        self.idleImage.append(load_image("frame-2.png", "./idle", alpha=True, scale=0.25))
-        self.idleImage.append(load_image("frame-1.png", "./idle", alpha=True, scale=0.25))
-        self.idleImage.append(load_image("frame-2.png", "./idle", alpha=True, scale=0.25))
-        self.runImage.append(load_image("frame-1.png", "./run", alpha=True, scale=0.25))
-        self.runImage.append(load_image("frame-2.png", "./run", alpha=True, scale=0.25))
-        self.runImage.append(load_image("frame-3.png", "./run", alpha=True, scale=0.25))
-        self.runImage.append(load_image("frame-4.png", "./run", alpha=True, scale=0.25))
-        self.dizzyImage.append(load_image("frame-1.png", "./dizzy", alpha=True, scale=0.25))
-        self.dizzyImage.append(load_image("frame-2.png", "./dizzy", alpha=True, scale=0.25))
-        self.dizzyImage.append(load_image("frame-1.png", "./dizzy", alpha=True, scale=0.25))
-        self.dizzyImage.append(load_image("frame-2.png", "./dizzy", alpha=True, scale=0.25))
+        self.idleImage.append(load_image("frame-1.png", "./idle", alpha=True, scale=MASCOT_SCALE))
+        self.idleImage.append(load_image("frame-2.png", "./idle", alpha=True, scale=MASCOT_SCALE))
+        self.idleImage.append(load_image("frame-1.png", "./idle", alpha=True, scale=MASCOT_SCALE))
+        self.idleImage.append(load_image("frame-2.png", "./idle", alpha=True, scale=MASCOT_SCALE))
+        self.runImage.append(load_image("frame-1.png", "./run", alpha=True, scale=MASCOT_SCALE))
+        self.runImage.append(load_image("frame-2.png", "./run", alpha=True, scale=MASCOT_SCALE))
+        self.runImage.append(load_image("frame-3.png", "./run", alpha=True, scale=MASCOT_SCALE))
+        self.runImage.append(load_image("frame-4.png", "./run", alpha=True, scale=MASCOT_SCALE))
+        self.dizzyImage.append(load_image("frame-1.png", "./dizzy", alpha=True, scale=MASCOT_SCALE))
+        self.dizzyImage.append(load_image("frame-2.png", "./dizzy", alpha=True, scale=MASCOT_SCALE))
+        self.dizzyImage.append(load_image("frame-1.png", "./dizzy", alpha=True, scale=MASCOT_SCALE))
+        self.dizzyImage.append(load_image("frame-2.png", "./dizzy", alpha=True, scale=MASCOT_SCALE))
         self.state = 0 # idle
         # self.state = 1 # run
         self.step = 0
         self.image = pygame.Surface(self.idleImage[0].get_size(), flags=pygame.SRCALPHA)
+        self.rect = self.image.get_rect()
         self.drawme()
 
 
@@ -267,17 +272,23 @@ class Mascot(pygame.sprite.Sprite):
 
         else:
             if self.position[0] < self.targetPosition[0]:
-                self.position = (self.position[0] + 1, self.position[1])
+                self.position = (min(self.targetPosition[0], self.position[0] + MASCOT_SPEED), self.position[1])
 
             if self.position[1] < self.targetPosition[1]:
-                self.position = (self.position[0], self.position[1] + 1)
+                self.position = (self.position[0], self.position[1] + MASCOT_SPEED)
 
             if self.position[1] > self.targetPosition[1]:
-                self.position = (self.position[0], self.position[1] - 1)
+                self.position = (self.position[0], self.position[1] - MASCOT_SPEED)
 
             if (self.position[0] == self.targetPosition[0]) and (self.position[1] == self.targetPosition[1]) and (self.state != 0):
                 self.idle()
 
+
+def filesInFolder(mypath):
+    from os import listdir
+    from os.path import isfile, join
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    return onlyfiles
 
 def main():
     keyArray = {}
@@ -312,12 +323,9 @@ def main():
     background = pygame.Surface(screen.get_size())
     background = background.convert()
     background.fill((250, 250, 250))
-    from os import listdir
-    from os.path import isfile, join
-    mypath = "./backgrounds"    
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    bg_selected = random.choice(onlyfiles)
-    background_image = load_image(bg_selected, "./backgrounds", alpha=False)
+    
+    bg_selected = random.choice(filesInFolder(BG_FOLDER))
+    background_image = load_image(bg_selected, BG_FOLDER, alpha=False)
     background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
     background.blit(background_image, (0,0))
 
@@ -341,7 +349,7 @@ def main():
     staff.position = (20 + notename.rect.width/2 - staff.rect.width/2,20)
     keyboard.position = (20 + 20 + notename.rect.width, 20 + staff.rect.height/2 - keyboard.rect.height/2)
     notename.position = (20,staff.rect.height + 40)
-    mascot.position = (20, 580)
+    mascot.position = (20, 690-mascot.rect.height)
 
     screen.blit(background, (0,0))
     screen.blit(background_green, (0,0))
@@ -374,7 +382,7 @@ def main():
         keyboard.notes = current_notes
         notename.notes = current_notes
 
-        mascot.moveTo(((1024-200)/len(data["steps"]))*i+20, 580)
+        mascot.moveTo(((1024-200)/len(data["steps"]))*i+20, mascot.position[1])
         staff.update()
         keyboard.update()
         notename.update()
