@@ -6,6 +6,7 @@ from pygame.locals import *
 import sys
 import os
 import json
+import random
 
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
@@ -311,7 +312,12 @@ def main():
     background = pygame.Surface(screen.get_size())
     background = background.convert()
     background.fill((250, 250, 250))
-    background_image = load_image("background.png", "./", alpha=False)
+    from os import listdir
+    from os.path import isfile, join
+    mypath = "./backgrounds"    
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    bg_selected = random.choice(onlyfiles)
+    background_image = load_image(bg_selected, "./backgrounds", alpha=False)
     background_image = pygame.transform.scale(background_image, (SCREEN_WIDTH, SCREEN_HEIGHT))
     background.blit(background_image, (0,0))
 
