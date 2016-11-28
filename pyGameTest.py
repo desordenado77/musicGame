@@ -14,6 +14,7 @@ CHANGE_LOOPS = 20
 BG_FOLDER = "./backgrounds"
 MASCOT_SCALE = 0.40
 MASCOT_SPEED = 2
+ROCKET_SCALE = 0.4
 
 
 def load_image(nombre, dir_imagen, alpha=False, scale=1):
@@ -195,6 +196,19 @@ class NoteName(pygame.sprite.Sprite):
         fontRender = self.font.render(displayText, True, (255,0,0))
         self.image.blit(fontRender, ((self.rect.width/2)-fontRender.get_rect().width/2, (self.rect.height/2)-fontRender.get_rect().height/2))
 
+class Rocket(pygame.sprite.Sprite):
+    position = (0,0)
+
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.rocketImage = load_image("rocket.png", "./rocket", alpha=True, scale=ROCKET_SCALE)
+        self.size = self.rocketImage.get_size();
+        self.image = pygame.Surface(self.size, flags=pygame.SRCALPHA)
+        self.rect = self.image.get_rect()
+        self.image.blit(self.rocketImage, (0,0))
+
+    def update(self):
+        self.image.blit(self.rocketImage, (0,0))
 
 class Mascot(pygame.sprite.Sprite):
     idleImage = []
@@ -345,11 +359,13 @@ def main():
     keyboard = Keyboard()
     notename = NoteName()
     mascot = Mascot()
+    rocket = Rocket()
 
     staff.position = (20 + notename.rect.width/2 - staff.rect.width/2,20)
     keyboard.position = (20 + 20 + notename.rect.width, 20 + staff.rect.height/2 - keyboard.rect.height/2)
     notename.position = (20,staff.rect.height + 40)
     mascot.position = (20, 690-mascot.rect.height)
+    rocket.position = (1004-rocket.rect.width, 690-rocket.rect.height)
 
     screen.blit(background, (0,0))
     screen.blit(background_green, (0,0))
@@ -357,6 +373,7 @@ def main():
     screen.blit(keyboard.image, keyboard.position)
     screen.blit(notename.image, notename.position)
     screen.blit(mascot.image, mascot.position)
+    screen.blit(rocket.image, rocket.position)
 
     pygame.display.flip()
 
@@ -382,7 +399,7 @@ def main():
         keyboard.notes = current_notes
         notename.notes = current_notes
 
-        mascot.moveTo(((1024-200)/len(data["steps"]))*i+20, mascot.position[1])
+        mascot.moveTo(((1024-280)/len(data["steps"]))*i+20, mascot.position[1])
         staff.update()
         keyboard.update()
         notename.update()
@@ -399,6 +416,7 @@ def main():
         screen.blit(keyboard.image, keyboard.position)
         screen.blit(notename.image, notename.position)
         screen.blit(mascot.image, mascot.position)
+        screen.blit(rocket.image, rocket.position)
 
         pygame.display.flip()
 
