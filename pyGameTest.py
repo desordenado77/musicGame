@@ -7,10 +7,11 @@ import sys
 import os
 import json
 import random
+import time
 
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
-CHANGE_LOOPS = 20
+CHANGE_LOOPS = 10
 BG_FOLDER = "./backgrounds"
 MASCOT_SCALE = 0.40
 MASCOT_SPEED = 2
@@ -198,6 +199,8 @@ class NoteName(pygame.sprite.Sprite):
 
 class Rocket(pygame.sprite.Sprite):
     position = (0,0)
+    launchPosition = (0,0)
+    launchStep = 0
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
@@ -206,6 +209,20 @@ class Rocket(pygame.sprite.Sprite):
         self.image = pygame.Surface(self.size, flags=pygame.SRCALPHA)
         self.rect = self.image.get_rect()
         self.image.blit(self.rocketImage, (0,0))
+
+    def launch(self):
+        if self.launchStep == 0:
+            self.launchPosition = self.position
+        if self.launchStep < 100:
+            self.position = (self.launchPosition[0] + random.randint(1, 10), self.launchPosition[1] + random.randint(1, 10))
+        if self.launchStep >= 100:
+            self.position = (self.launchPosition[0], self.launchPosition[1] - (self.launchStep - 100)*4)
+        
+        if self.position[1] > -self.rect.height:
+            self.launchStep = self.launchStep + 1
+            return 0
+        else:
+            return 1
 
     def update(self):
         self.image.blit(self.rocketImage, (0,0))
@@ -238,6 +255,12 @@ class Mascot(pygame.sprite.Sprite):
     def dizzy(self):
         self.state = 2
 #        self.step = 0
+
+    def hide(self):
+        if self.position[0] >= self.targetPosition[0]:
+            self.state = 3
+
+        return self.state
 
     def moveTo(self, x, y):
         if ((self.position[0] != self.targetPosition[0]) or (self.position[1] != self.targetPosition[1])) and (self.state == 0):
@@ -399,7 +422,7 @@ def main():
         keyboard.notes = current_notes
         notename.notes = current_notes
 
-        mascot.moveTo(((1024-280)/len(data["steps"]))*i+20, mascot.position[1])
+        mascot.moveTo(((1024-180)/len(data["steps"]))*i+20, mascot.position[1])
         staff.update()
         keyboard.update()
         notename.update()
@@ -412,9 +435,24 @@ def main():
             background_green.set_alpha(255*changed/CHANGE_LOOPS)
             screen.blit(background_green, (0,0))
 
-        screen.blit(staff.image, staff.position)
-        screen.blit(keyboard.image, keyboard.position)
-        screen.blit(notename.image, notename.position)
+        if i >= len(data["steps"]):
+            # fly... 
+            if mascot.hide() == 3:
+                if rocket.launch() == 1:
+                    # game done
+                    print "done"
+                    font = pygame.font.Font('comic-andy/comic_andy.ttf', 160)
+                    fontRender = font.render("Muy Bien!!!", True, (255,0,0))
+                    screen.blit(fontRender, (300, 160))
+                    pygame.display.flip()
+                    time.sleep(4)                    
+
+                    sys.exit()
+        else:
+            screen.blit(staff.image, staff.position)
+            screen.blit(keyboard.image, keyboard.position)
+            screen.blit(notename.image, notename.position)
+
         screen.blit(mascot.image, mascot.position)
         screen.blit(rocket.image, rocket.position)
 
