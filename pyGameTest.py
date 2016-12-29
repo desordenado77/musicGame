@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import pygame
+import pygame.midi
 from pygame.locals import *
 import sys
 import os
@@ -11,11 +12,29 @@ import time
 
 SCREEN_WIDTH = 1024
 SCREEN_HEIGHT = 768
-CHANGE_LOOPS = 10
+CHANGE_LOOPS = 4
 BG_FOLDER = "./backgrounds"
 MASCOT_SCALE = 0.40
 MASCOT_SPEED = 2
 ROCKET_SCALE = 0.4
+
+
+
+def _print_device_info():
+    for i in range( pygame.midi.get_count() ):
+        r = pygame.midi.get_device_info(i)
+        (interf, name, input, output, opened) = r
+
+        in_out = ""
+        if input:
+            in_out = "(input)"
+        if output:
+            in_out = "(output)"
+
+        print ("%2i: interface :%s:, name :%s:, opened :%s:  %s" %
+               (i, interf, name, opened, in_out))
+        
+
 
 
 def load_image(nombre, dir_imagen, alpha=False, scale=1):
@@ -327,7 +346,8 @@ def filesInFolder(mypath):
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
     return onlyfiles
 
-def main():
+def main(device_id):
+
     keyArray = {}
     keyArray["c"] = pygame.K_a
     keyArray["d"] = pygame.K_s
@@ -337,9 +357,33 @@ def main():
     keyArray["a"] = pygame.K_h
     keyArray["b"] = pygame.K_j
 
+    midiArray = {}
+    midiArray["c"] = 0
+    midiArray["d"] = 2
+    midiArray["e"] = 4
+    midiArray["f"] = 5
+    midiArray["g"] = 7
+    midiArray["a"] = 9
+    midiArray["b"] = 11
+
 
     pygame.init()
 
+    pygame.fastevent.init()
+    event_get = pygame.fastevent.get
+    event_post = pygame.fastevent.post
+
+    pygame.midi.init()
+
+    _print_device_info()
+
+    if device_id is None:
+        input_id = pygame.midi.get_default_input_id()
+    else:
+        input_id = device_id
+
+    print ("using input_id :%s:" % input_id)
+    midiInput = pygame.midi.Input( input_id )
 
     with open('pista1.json') as data_file:    
         data = json.load(data_file)
@@ -460,6 +504,22 @@ def main():
 
         if changed == 0:
             for event in pygame.event.get():
+                keyFound = 0
+
+                if event.type in [pygame.midi.MIDIIN]:
+                    if event.status == 128:
+                        # Key released
+                        for theNote in current_notes:
+                            if (event.data1%12) == midiArray[theNote]:
+                                i = i + 1
+                                changed = CHANGE_LOOPS
+                                failure = 0                        
+                                keyFound = 1
+                        if keyFound == 0:
+                            changed = CHANGE_LOOPS
+                            failure = 1
+                            mascot.dizzy()
+
                 if event.type == pygame.QUIT:
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
@@ -489,6 +549,14 @@ def main():
                             failure = 1
                             mascot.dizzy()
 
+        if midiInput.poll():
+            midi_events = midiInput.read(10)
+            # convert them into pygame events.
+            midi_evs = pygame.midi.midis2events(midi_events, midiInput.device_id)
+
+            for m_e in midi_evs:
+                event_post( m_e )
+
         #curtime = pygame.time.get_ticks()
         clock.tick(60)
         #print "elapsed time " + str(curtime-prevtime)
@@ -496,4 +564,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+
+    try:
+        device_id = int( sys.argv[-1] )
+    except:
+        device_id = None
+
+    main(device_id)
