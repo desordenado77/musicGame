@@ -346,7 +346,7 @@ def filesInFolder(mypath):
     onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
     return onlyfiles
 
-def main(device_id):
+def main(file_name, device_id):
 
     keyArray = {}
     keyArray["c"] = pygame.K_a
@@ -385,7 +385,7 @@ def main(device_id):
     print ("using input_id :%s:" % input_id)
     midiInput = pygame.midi.Input( input_id )
 
-    with open('pista1.json') as data_file:    
+    with open(file_name) as data_file:    
         data = json.load(data_file)
 
     file = data["Song"]
@@ -395,7 +395,9 @@ def main(device_id):
     pygame.init()
     pygame.mixer.init()
     pygame.mixer.music.load(file)
-    #pygame.mixer.music.play()
+    pygame.mixer.music.play()
+    playingMusic = 0
+    pygame.mixer.music.pause()
 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Music Game")
@@ -544,6 +546,13 @@ def main(device_id):
                             changed = CHANGE_LOOPS
                             failure = 0
                             mascot.run()
+                        elif event.key == pygame.K_m:
+                            if playingMusic == 1:
+                                pygame.mixer.music.pause()
+                                playingMusic = 0
+                            else:
+                                pygame.mixer.music.unpause()
+                                playingMusic = 1
                         else:
                             changed = CHANGE_LOOPS
                             failure = 1
@@ -566,8 +575,10 @@ def main(device_id):
 if __name__ == "__main__":
 
     try:
+        file_name = str(sys.argv[1])
         device_id = int( sys.argv[-1] )
     except:
+        file_name = "pista1.json"
         device_id = None
 
-    main(device_id)
+    main(file_name, device_id)
