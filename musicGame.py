@@ -576,9 +576,14 @@ if __name__ == "__main__":
 
     try:
         file_name = str(sys.argv[1])
+    except:
+        print "usage:"
+        print "\t" + sys.argv[0] + " json [midi_device]"
+        sys.exit(0)        
+
+    try:
         device_id = int( sys.argv[-1] )
     except:
-        file_name = "pista1.json"
         device_id = None
 
     main(file_name, device_id)

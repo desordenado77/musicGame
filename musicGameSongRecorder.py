@@ -77,6 +77,7 @@ def main(file_name, song_file, device_id):
     data = {}
 
     data["Song"] = song_file
+    data["steps"] = []
 
     pygame.init()
     pygame.mixer.init()
@@ -96,6 +97,8 @@ def main(file_name, song_file, device_id):
 
     clock = pygame.time.Clock()
 
+    print "press q to exit"
+
     while notFinished:
         for event in pygame.event.get():
             keyFound = 0
@@ -103,17 +106,21 @@ def main(file_name, song_file, device_id):
             if event.type in [pygame.midi.MIDIIN]:
                 if event.status == 128:
                     # Key released
-                    try:
-                        print "step: " + str(step) + " note: " + midiArray[event.data1%12]
-                        step = step + 1
-                    except:
-                        print "not handled key"
+#                    try:
+                    print "step: " + str(step) + " note: " + midiArray[event.data1%12]
+                    step = step + 1
+                    noteToAdd = {}
+                    noteToAdd["notes"] = midiArray[event.data1%12] 
+                    data["steps"].append(noteToAdd)
+#                    except:
+#                        print "not handled key"
             if event.type == pygame.QUIT:
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 try:
                     print "step: " + str(step) + " note: " + keyArray[event.key]
                     step = step + 1
+                    data["steps"][step]["notes"] = keyArray[event.key]
                 except:
                     if event.key == pygame.K_q:
                         notFinished = 0
@@ -136,18 +143,22 @@ def main(file_name, song_file, device_id):
                     event_post( m_e )
 
         clock.tick(60)
-#    with open(file_name, 'w') as outfile:
-#        json.dump(data, outfile)
+    with open(file_name, 'w') as outfile:
+        json.dump(data, outfile)
 
 
 if __name__ == "__main__":
     try:
         file_name = str(sys.argv[1])
         song_file = str(sys.argv[2])
+    except:
+        print "usage:"
+        print "\t" + sys.argv[0] + " json song_file [midi_device]"
+        sys.exit(0)
+
+    try:
         device_id = int( sys.argv[-1] )
     except:
-        file_name = "pista1.json"
-        song_file = "file.mp3"
         device_id = None
 
     main(file_name, song_file, device_id)
