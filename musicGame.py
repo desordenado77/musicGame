@@ -62,10 +62,15 @@ class Staff(pygame.sprite.Sprite):
     notes = [] # 'c', 'd', 'e', 'f', 'g', 'a', 'b']
     size = []
     position = (0,0)
+    key = "g"
 
     def drawme(self):
         self.image.fill((250,250,250))
-        self.image.blit(self.keyofg, (0, 0))
+        if self.key == "f":
+            self.image.blit(self.keyoff, (0, 35))
+        else:
+            self.image.blit(self.keyofg, (0, 0))
+
         self.rect = self.image.get_rect()
         i =0
         for i in range(1,6):
@@ -75,9 +80,10 @@ class Staff(pygame.sprite.Sprite):
 
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
+        self.keyoff = load_image("keyoff.png", "./", alpha=False, scale=0.18)
         self.keyofg = load_image("keyofg.png", "./", alpha=False)
         self.keyofg = pygame.transform.scale(self.keyofg, (80, 240))
-        self.size = self.keyofg.get_size();
+        self.size = (80,240) 
 
         self.image = pygame.Surface([self.size[0]*3, self.size[1]])
         self.drawme()
@@ -112,8 +118,11 @@ class Staff(pygame.sprite.Sprite):
 
             if len(self.notes) == 1:
                 posx = posx + self.rect.height/7
-            if note == 'c':
-                pygame.draw.line(self.image, (0,0,0), (posx-self.rect.height/10, posy), (posx+self.rect.height/10, posy),4)
+            if self.key == "f":
+                posy = posy - 5*self.rect.height/14
+            else:
+                if note == 'c':
+                    pygame.draw.line(self.image, (0,0,0), (posx-self.rect.height/10, posy), (posx+self.rect.height/10, posy),4)
             pygame.draw.circle(self.image, (0,0,0), (posx, posy), self.rect.height/16, 0)
 
 
@@ -431,6 +440,12 @@ def main(file_name, device_id):
     rocket = Rocket()
 
     staff.position = (20 + notename.rect.width/2 - staff.rect.width/2,20)
+
+    try:
+        staff.key = data["key"]
+    except:
+        staff.key = "g"
+
     keyboard.position = (20 + 20 + notename.rect.width, 20 + staff.rect.height/2 - keyboard.rect.height/2)
     notename.position = (20,staff.rect.height + 40)
     mascot.position = (20, 690-mascot.rect.height)
