@@ -18,6 +18,8 @@ MASCOT_SCALE = 0.40
 MASCOT_SPEED = 2
 ROCKET_SCALE = 0.4
 
+FAILURE_POINTS = -4
+SUCCESS_POINTS = 10
 
 
 def _print_device_info():
@@ -356,6 +358,10 @@ def filesInFolder(mypath):
     return onlyfiles
 
 def main(file_name, device_id):
+    showKeyboard = True
+    showNotename = True
+
+    points = 0
 
     keyArray = {}
     keyArray["c"] = pygame.K_a
@@ -393,6 +399,10 @@ def main(file_name, device_id):
 
     print ("using input_id :%s:" % input_id)
     midiInput = pygame.midi.Input( input_id )
+
+    if file_name == "random.json":
+        showKeyboard = False
+        showNotename = False
 
     with open(file_name) as data_file:    
         data = json.load(data_file)
@@ -446,6 +456,9 @@ def main(file_name, device_id):
     except:
         staff.key = "g"
 
+    if staff.key == "r":
+        staff.key = random.sample(["g", "f"],  1)[0]
+
     keyboard.position = (20 + 20 + notename.rect.width, 20 + staff.rect.height/2 - keyboard.rect.height/2)
     notename.position = (20,staff.rect.height + 40)
     mascot.position = (20, 690-mascot.rect.height)
@@ -454,8 +467,10 @@ def main(file_name, device_id):
     screen.blit(background, (0,0))
     screen.blit(background_green, (0,0))
     screen.blit(staff.image, staff.position)
-    screen.blit(keyboard.image, keyboard.position)
-    screen.blit(notename.image, notename.position)
+    if showKeyboard:
+        screen.blit(keyboard.image, keyboard.position)
+    if showNotename:
+        screen.blit(notename.image, notename.position)
     screen.blit(mascot.image, mascot.position)
     screen.blit(rocket.image, rocket.position)
 
@@ -476,6 +491,8 @@ def main(file_name, device_id):
         else:
             if i < len(data["steps"]) and i>=0:
                 current_notes = data["steps"][i]["notes"]
+                if current_notes == "r":
+                    current_notes = data["steps"][i]["notes"] = random.sample(["a", "b", "c", "d", "e", "f", "g"],  1)[0]
             else:
                 current_notes = []
 
@@ -485,8 +502,10 @@ def main(file_name, device_id):
 
         mascot.moveTo(((1024-180)/len(data["steps"]))*i+20, mascot.position[1])
         staff.update()
-        keyboard.update()
-        notename.update()
+        if showKeyboard:
+            keyboard.update()
+        if showNotename:
+            notename.update()
         mascot.update()
         screen.blit(background, (0,0))
         if failure == 1:
@@ -505,14 +524,18 @@ def main(file_name, device_id):
                     font = pygame.font.Font('comic-andy/comic_andy.ttf', 160)
                     fontRender = font.render("Muy Bien!!!", True, (255,0,0))
                     screen.blit(fontRender, (300, 160))
+                    fontRender = font.render(str(points) + " Puntos", True, (255,0,0))
+                    screen.blit(fontRender, (300, 260))
                     pygame.display.flip()
                     time.sleep(4)                    
 
                     sys.exit()
         else:
             screen.blit(staff.image, staff.position)
-            screen.blit(keyboard.image, keyboard.position)
-            screen.blit(notename.image, notename.position)
+            if showKeyboard:
+                screen.blit(keyboard.image, keyboard.position)
+            if showNotename:
+                screen.blit(notename.image, notename.position)
 
         screen.blit(mascot.image, mascot.position)
         screen.blit(rocket.image, rocket.position)
@@ -532,10 +555,12 @@ def main(file_name, device_id):
                                 changed = CHANGE_LOOPS
                                 failure = 0                        
                                 keyFound = 1
+                                points = points + SUCCESS_POINTS
                         if keyFound == 0:
                             changed = CHANGE_LOOPS
                             failure = 1
                             mascot.dizzy()
+                            points = points + FAILURE_POINTS
 
                 if event.type == pygame.QUIT:
                     sys.exit()
@@ -548,6 +573,7 @@ def main(file_name, device_id):
                             changed = CHANGE_LOOPS
                             failure = 0                        
                             keyFound = 1
+                            points = points + SUCCESS_POINTS
                     if keyFound == 0:
                         if event.key == pygame.K_LEFT:
                             if i - 1 >= 0:
@@ -572,6 +598,7 @@ def main(file_name, device_id):
                             changed = CHANGE_LOOPS
                             failure = 1
                             mascot.dizzy()
+                            points = points + FAILURE_POINTS
 
         if midiInput.poll():
             midi_events = midiInput.read(10)
